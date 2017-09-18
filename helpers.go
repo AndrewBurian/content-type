@@ -1,4 +1,4 @@
-package content_type
+package mediatype
 
 // Code in this helpers file is borrowed from the google "headers" library
 

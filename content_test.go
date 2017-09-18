@@ -1,4 +1,4 @@
-package content_type
+package mediatype
 
 import (
 	"net/http"
@@ -157,7 +157,6 @@ func TestContentTypeList_SupportsType2(t *testing.T) {
 		t.Error("Should have supported text/x-c")
 	}
 }
-
 
 func TestContentTypeList_SupportsType3(t *testing.T) {
 	list, err := Parse("text/plain; q=0.5, text/html, text/x-dvi; q=0.8, text/x-c, application/*")
