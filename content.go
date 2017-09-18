@@ -48,7 +48,7 @@ func ParseRequest(r *http.Request) (content *ContentType, accepts ContentTypeLis
 func Parse(data string) (ContentTypeList, error) {
 	types := make(ContentTypeList, 0, 1)
 
-	for _, entry := range strings.Split(data, ",") {
+	for _, entry := range parseList(data) {
 		t, err := ParseSingle(entry)
 		if err != nil {
 			return nil, err
@@ -65,51 +65,32 @@ func Parse(data string) (ContentTypeList, error) {
 
 // ParseSingle takes a single content type and assumes it is not comma terminated
 func ParseSingle(data string) (*ContentType, error) {
-	var qSet bool
 
 	if data == "" {
 		return nil, nil
 	}
 
+	mediaType, params := parseValueAndParams(data)
+	splt := strings.Split(mediaType, "/")
+	if len(splt) != 2 {
+		return nil, errors.New("Malformed media type")
+	}
+
+	q := float64(1)
+	if val, ok := params["q"]; ok {
+		newQ, err := strconv.ParseFloat(val, 64)
+		if err != nil {
+			return nil, err
+		}
+		q = newQ
+	}
+
 	t := &ContentType{
-		Parameters: make(map[string]string),
-	}
-
-	// split the content type out from it's parameters
-	components := strings.Split(data, ";")
-	t.MediaType = strings.TrimSpace(components[0])
-
-	// split the media type into type and subtype
-	typeParts := strings.Split(t.MediaType, "/")
-	if len(typeParts) != 2 {
-		return nil, errors.New("Invalid content type [" + t.MediaType + "]")
-	}
-	t.Type = typeParts[0]
-	t.SubType = typeParts[1]
-
-	// Go through the parameters
-	for _, param := range components[1:] {
-		values := strings.Split(param, "=")
-		if len(values) != 2 {
-			return nil, errors.New("Malformed parameter [" + param + "]")
-		}
-		key := strings.TrimSpace(values[0])
-		t.Parameters[key] = strings.TrimSpace(values[1])
-
-		// store quality specially
-		if key == "q" {
-			qual, err := strconv.ParseFloat(t.Parameters[key], 64)
-			if err != nil {
-				return nil, errors.New("Malformed quality [" + t.Parameters[key] + "]")
-			}
-			t.Quality = qual
-			qSet = true
-		}
-	}
-
-	// Default Quality is 1 (RFC 7231 Sec. 5.3.1)
-	if !qSet {
-		t.Quality = 1
+		Parameters: params,
+		MediaType:  mediaType,
+		Type:       splt[0],
+		SubType:    splt[1],
+		Quality:    q,
 	}
 
 	return t, nil
