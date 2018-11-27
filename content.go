@@ -22,7 +22,7 @@ type ContentType struct {
 // ContentTypeList is an array of content type objects
 type ContentTypeList []*ContentType
 
-// ParseRequests pulls content types from the `Content-Type` and `Accept` headers, reconstructing
+// ParseRequest pulls content types from the `Content-Type` and `Accept` headers, reconstructing
 // them according to RFC 2616. The return value for content may be nil even if no error was set
 func ParseRequest(r *http.Request) (content *ContentType, accepts ContentTypeList, err error) {
 
@@ -108,6 +108,34 @@ func (t *ContentType) String() string {
 	}
 
 	return buf.String()
+}
+
+// Matches checks whether two ContentTypes are equal in Type,
+// Subtype, and parameters not including quality ("q")
+// Extra parameters in other are allowed, but other must contain
+// matching parameters for any listed in t.
+// In other words: other may be more specific than t.
+func (t *ContentType) Matches(other *ContentType) bool {
+	if other == nil {
+		return false
+	}
+
+	if t.MediaType != other.MediaType {
+		return false
+	}
+
+	for param, expect := range t.Parameters {
+		// disregard quality
+		if param == "q" {
+			continue
+		}
+		if val, ok := other.Parameters[param]; !ok || val != expect {
+			return false
+		}
+	}
+
+	return true
+
 }
 
 func (l ContentTypeList) String() string {

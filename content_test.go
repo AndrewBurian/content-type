@@ -221,3 +221,73 @@ func TestContentTypeList_PreferredMatch3(t *testing.T) {
 		t.Error("Mismatch", match.MediaType, "application/nothing")
 	}
 }
+
+func TestContentTypeMatch_EasyMatch(t *testing.T) {
+	ct, err := ParseSingle("text/html")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ct.Matches(ct) {
+		t.Error("Type should match itself")
+	}
+}
+
+func TestContentTypeMatch_ParamMatch(t *testing.T) {
+	ct, err := ParseSingle("text/html; a=a; b=b")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ct.Matches(ct) {
+		t.Error("Type should match itself")
+	}
+}
+
+func TestContentTypeMatch_ExtraParams(t *testing.T) {
+	ct1, err := ParseSingle("text/html")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ct2, err := ParseSingle("text/html; charset=utf-8")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ct1.Matches(ct2) {
+		t.Error("Type with extra parameters should match")
+	}
+}
+
+func TestContentTypeMatch_MissingParams(t *testing.T) {
+	ct1, err := ParseSingle("text/html; charset=utf-8")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ct2, err := ParseSingle("text/html")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if ct1.Matches(ct2) {
+		t.Error("Type shouldn't match when missing params")
+	}
+}
+
+func TestContentTypeMatch_IgnoreQuality(t *testing.T) {
+	ct1, err := ParseSingle("text/html; q=1")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ct2, err := ParseSingle("text/html; q=0.5")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !ct1.Matches(ct2) {
+		t.Error("Type shouldn't care about quality")
+	}
+}
